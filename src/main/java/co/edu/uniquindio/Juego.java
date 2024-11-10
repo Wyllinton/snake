@@ -73,7 +73,7 @@ public class Juego extends JFrame {
 
     private void agregarVivoraInicial() {
         String nombre = "Vívora 1";
-        Vivora primeraVivora = new Vivora(true, 200, 200, nombre);
+        Vivora primeraVivora = new Vivora(true, 150, 175, nombre);
         vivoras.add(primeraVivora);
         vivorasDefault.addElement(primeraVivora);
         actualizarControl(primeraVivora);
@@ -82,7 +82,7 @@ public class Juego extends JFrame {
 
     private void agregarVivora() {
         String nombre = "Vívora " + (vivoras.size() + 1);
-        Vivora nuevaVivora = new Vivora(true, 200, 200, nombre); // Asigna la nueva víbora como controlada por el usuario
+        Vivora nuevaVivora = new Vivora(true, 250, 350, nombre); // Asigna la nueva víbora como controlada por el usuario
         vivoras.add(nuevaVivora);
         vivorasDefault.addElement(nuevaVivora);
         actualizarControl(nuevaVivora); // Actualiza el control de todas las víboras
