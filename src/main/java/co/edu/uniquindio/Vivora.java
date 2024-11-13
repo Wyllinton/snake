@@ -5,20 +5,21 @@ import java.util.Random;
 import java.awt.Color;
 import static co.edu.uniquindio.Tablero.*;
 
+//Esta clase representa cada vivora instanciada, es un hilo, puede moverse por controles o de manera aleatoria y usa los nodos como cuerpo
 public class Vivora extends Thread {
     Nodo cabeza;
-    String direccion;
-    boolean controladaPorUsuario;
-    Color color;
-    boolean viva = true; // Indicates if the snake is alive
-    int velocidad = 200; // Initial speed in milliseconds
-    String nombre;
-    static final int SIZE = 20; // Tamaño de la serpiente
+    String direccion;// Condición de que la dirección sea un String
+    boolean controladaPorUsuario;// Variable para representar si el usuario tiene el control
+    Color color; // Componente de graphics
+    boolean viva = true; // Variable que establece si la vibora se encuentra "viva"
+    int velocidad = 200; // Velocidad inicial de las viboras
+    String nombre; // Nombre de identificación para cada vibora
+    static final int SIZE = Nodo.TAMANO; // Tamaño de la serpiente
 
     public Vivora(boolean controladaPorUsuario, int startX, int startY, String nombre) {
         this.controladaPorUsuario = controladaPorUsuario;
         this.cabeza = new Nodo(startX, startY);
-        this.direccion = "derecha"; // Initial direction
+        this.direccion = "abajo"; // Initial direction
         this.color = generarColorAleatorio();
         this.nombre = nombre;
     }
@@ -29,6 +30,7 @@ public class Vivora extends Thread {
         return new Color(rand.nextInt(256), rand.nextInt(256), rand.nextInt(256));
     }
 
+    // Dirección en formato string (requisito)
     public String getDireccion() {
         return direccion;
     }
@@ -41,21 +43,21 @@ public class Vivora extends Thread {
         this.controladaPorUsuario = controladaPorUsuario;
     }
 
+    //Hilo que utilizara cada vibora, tiene un bucle que se ejecutara siempre si está se encuentra viva, además se setea la velocidad del juego (dificultad)
     @Override
-public void run() {
-    while (viva) {
-        moverSnake();
-        try {
-            Thread.sleep(Tablero.velocidadGlobal);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    public void run() {
+        while (viva) {
+            moverVibora();
+            try {
+                Thread.sleep(Tablero.velocidadGlobal);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
-}
 
-
-    // Method to move the snake
-    public synchronized void moverSnake() {
+    //Mueve la vibora, según el string que recibe se modifica las coordenadas en X, Y
+    public synchronized void moverVibora() {
         int newX = cabeza.x;
         int newY = cabeza.y;
 
@@ -78,18 +80,18 @@ public void run() {
                 break;
         }
 
-        // Check for boundaries
+        //Verifica que las coordenadas se encuentren en el tablero de juego
         if (newX < LIMITE_IZQUIERDA || newY < LIMITE_ARRIBA || newX >= LIMITE_DERECHA || newY >= LIMITE_ABAJO) {
-            viva = false;
+            viva = false; //Si se encuentra con alguno de estos limites, la vibora "muere"
             return;
         }
 
-        cabeza.mover(newX, newY);
+        cabeza.moverNodo(newX, newY);
     }
 
-    // Method to change direction automatically
+    //Método para mover la vibora de forma automatica, se define un array de direcciones, luego de forma aleatoria se generan direcciones que serán seteadas a la vibora
     private void cambiarDireccionAutomatica() {
-        String[] direcciones = {"arriba", "abajo", "izquierda", "derecha"};
+        String[] direcciones = { "arriba", "abajo", "izquierda", "derecha" };
         String direccionAnterior = this.direccion;
         Random rand = new Random();
 
@@ -101,31 +103,30 @@ public void run() {
                 (direccionAnterior.equals("derecha") && this.direccion.equals("izquierda")));
     }
 
-    // Method to add a new node when the snake eats
+    //Método que simula el crecimiento de la vibora 
     public synchronized void agregarNodo() {
         Nodo cola = cabeza.getCola();
         Nodo nuevoNodo = new Nodo(cola.prevX, cola.prevY);
         cola.siguienteNodo = nuevoNodo;
-        // Aumentar la velocidad ligeramente
+        // Aumentar la velocidad cada vez que come para aumentar la dificultad de manera sútil con limite de 80
         if (velocidad > 80) {
             velocidad -= 20;
         }
     }
 
-
     public synchronized Nodo getCabeza() {
         return cabeza;
     }
 
-    // Method to draw the snake
-    public void draw(Graphics g) {
-        Nodo current = cabeza;
+    //Método para dibujar una vibora en el tablero de juego usando la librería Java Graphics 
+    public void dibujarVibora(Graphics g) {
+        Nodo actual = cabeza;
         g.setColor(color);
-        while (current != null) {
-            g.fillOval(current.x, current.y, SIZE, SIZE); // Adjusted size
-            g.setColor(Color.BLACK);
-            g.drawOval(current.x, current.y, SIZE, SIZE); // Outline for better visibility
-            current = current.siguienteNodo;
+        while (actual != null) {
+            g.fillOval(actual.x, actual.y, SIZE, SIZE); //Método para hacer un ovalo según paramteros de tamaño y coordenadas
+            g.setColor(Color.WHITE);
+            g.drawOval(actual.x, actual.y, SIZE, SIZE); // Dibujar un contorno 
+            actual = actual.siguienteNodo;
             g.setColor(color);
         }
     }
@@ -135,4 +136,3 @@ public void run() {
         return nombre;
     }
 }
-

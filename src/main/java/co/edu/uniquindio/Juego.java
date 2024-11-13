@@ -4,11 +4,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+/*Juego extiende JFrame funciona como la ventana principal del juego.
+ * Define un panel lateral con controles adicionales para interactuar con el juego, como la adición de nuevas *víboras y la selección del nivel de dificultad.
+*También maneja la lógica para actualizar el juego en intervalos definidos de tiempo. */
 
 public class Juego extends JFrame {
     List<Vivora> vivoras;
     Tablero tablero;
-    DefaultListModel<Vivora> vivorasDefault;
+    DefaultListModel<Vivora> viborasInterfaz;//Lista que mostrará las víboras en la interfaz
     Timer timer;
 
     public Juego() {
@@ -19,45 +22,45 @@ public class Juego extends JFrame {
         vivoras = new ArrayList<>();
         tablero = new Tablero(vivoras);
 
-        // Panel lateral para controles y lista de víboras
+        // Panel lateral para seleccionar la vibora, lista de víboras 
         JPanel sidePanel = new JPanel(new BorderLayout());
         sidePanel.setPreferredSize(new Dimension(250, getHeight()));
 
-        // Botón para añadir una nueva víbora
-        JButton agregarVivoraButton = new JButton("Añadir Vívora");
+        //Botón para añadir una víbora
+        JButton agregarVivoraButton = new JButton("Añadir Víbora");
         agregarVivoraButton.addActionListener(e -> agregarVivora());
         sidePanel.add(agregarVivoraButton, BorderLayout.SOUTH);
 
         // Lista de víboras
-        vivorasDefault = new DefaultListModel<>();
-        JList<Vivora> snakeList = new JList<>(vivorasDefault);
-        snakeList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        snakeList.addListSelectionListener(e -> {
+        viborasInterfaz = new DefaultListModel<>();
+        JList<Vivora> listaViboras = new JList<>(viborasInterfaz);
+        listaViboras.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        listaViboras.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                Vivora selectedVivora = snakeList.getSelectedValue();
+                Vivora selectedVivora = listaViboras.getSelectedValue();
                 if (selectedVivora != null) {
                     actualizarControl(selectedVivora);
-                    tablero.requestFocusInWindow(); // Solicitar el enfoque para el panel del juego
+                    tablero.requestFocusInWindow();
                 }
             }
         });
-        JScrollPane snakeListScrollPane = new JScrollPane(snakeList);
-        sidePanel.add(snakeListScrollPane, BorderLayout.CENTER);
+        JScrollPane listaViborasScrollPane = new JScrollPane(listaViboras);
+        sidePanel.add(listaViborasScrollPane, BorderLayout.CENTER);
 
         // Panel de dificultad
         JPanel difficultyPanel = new JPanel();
         difficultyPanel.setLayout(new FlowLayout());
         
-        JButton hardButton = new JButton("Fácil");
-        hardButton.addActionListener(e -> cambiarDificultad(100)); // Velocidad rápida para difícil
+        JButton dificilBoton = new JButton("Fácil");
+        dificilBoton.addActionListener(e -> cambiarDificultad(100)); // Velocidad rápida para difícil
 
-        JButton normalButton = new JButton("Difícil");
-        normalButton.addActionListener(e -> cambiarDificultad(50)); // Velocidad lenta para fácil
+        JButton normalBoton = new JButton("Difícil");
+        normalBoton.addActionListener(e -> cambiarDificultad(50)); // Velocidad lenta para fácil
 
-        difficultyPanel.add(normalButton);
-        difficultyPanel.add(hardButton);
+        difficultyPanel.add(normalBoton);
+        difficultyPanel.add(dificilBoton);
         
-        sidePanel.add(difficultyPanel, BorderLayout.NORTH); // Añade el panel de dificultad en la parte inferior
+        sidePanel.add(difficultyPanel, BorderLayout.NORTH); // Añade el panel de dificultad en la parte superior
 
         // Añade los paneles al marco principal
         add(tablero, BorderLayout.CENTER);
@@ -66,7 +69,7 @@ public class Juego extends JFrame {
         // Crea la primera víbora controlada por el usuario
         agregarVivoraInicial();
 
-        // Inicia el bucle del juego
+        // Inicia el bucle del juego con el timer
         timer = new Timer(Tablero.velocidadGlobal, e -> actualizarJuego());
         timer.start();
     }
@@ -75,7 +78,7 @@ public class Juego extends JFrame {
         String nombre = "Vívora 1";
         Vivora primeraVivora = new Vivora(true, 150, 175, nombre);
         vivoras.add(primeraVivora);
-        vivorasDefault.addElement(primeraVivora);
+        viborasInterfaz.addElement(primeraVivora);
         actualizarControl(primeraVivora);
         primeraVivora.start();
     }
@@ -84,12 +87,12 @@ public class Juego extends JFrame {
         String nombre = "Vívora " + (vivoras.size() + 1);
         Vivora nuevaVivora = new Vivora(true, 250, 350, nombre); // Asigna la nueva víbora como controlada por el usuario
         vivoras.add(nuevaVivora);
-        vivorasDefault.addElement(nuevaVivora);
+        viborasInterfaz.addElement(nuevaVivora);
         actualizarControl(nuevaVivora); // Actualiza el control de todas las víboras
         nuevaVivora.start();
 
         // Selecciona la nueva víbora en la lista para hacerla activa
-        int index = vivorasDefault.getSize() - 1;
+        int index = viborasInterfaz.getSize() - 1;
         @SuppressWarnings("unchecked")
         JList<Vivora> snakeList = (JList<Vivora>) ((JScrollPane) ((JPanel) getContentPane().getComponent(1)).getComponent(1)).getViewport().getView();
         snakeList.setSelectedIndex(index);

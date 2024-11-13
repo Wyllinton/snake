@@ -6,26 +6,24 @@ import java.util.List;
 import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-
+//Clase que representa el área de juego extiende JPanel (el cual funciona como lienzo para actualizar la interfaz gráfica). Además controla la lógica de las víboras (Movimiento, colisiones y nodos de comida)
 public class Tablero extends JPanel {
     List<Vivora> vivoras;
-    CopyOnWriteArrayList<NodoComida> nodosComida = new CopyOnWriteArrayList<>();
+    CopyOnWriteArrayList<NodoComida> nodosComida = new CopyOnWriteArrayList<>();//Lista que permite la concurrencia entre varios hilos (viboras)
     protected static final int LIMITE_IZQUIERDA = 20;
     protected static final int LIMITE_DERECHA = 780;
     protected static final int LIMITE_ARRIBA = 20;
     protected static final int LIMITE_ABAJO = 580;
     public static int velocidadGlobal = 200; // Usada por todas las víboras
-    public static boolean gameActive;
-
 
     public Tablero(List<Vivora> vivoras) {
         this.vivoras = vivoras;
-        setLayout(null); // Use absolute positioning for the game area
+        setLayout(null); //Posicionamiento Absoluto, el cual permite posicionar elementos con coordenadas específicas dentro del panel
         setBackground(Color.BLACK);
-        setFocusable(true);
-        setPreferredSize(new Dimension(LIMITE_DERECHA -LIMITE_IZQUIERDA, LIMITE_ABAJO- LIMITE_ARRIBA));
+        setFocusable(true);//Gestiona la entrada de teclado
+        setPreferredSize(new Dimension(LIMITE_DERECHA - LIMITE_IZQUIERDA, LIMITE_ABAJO - LIMITE_ARRIBA));
 
-        // Add key listener for controlling the active snake
+        //Se añade el key listener para las entradas de teclado, de acuerdo a la entrada se setea la dirección de la vibora 
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -54,7 +52,7 @@ public class Tablero extends JPanel {
             }
         });
 
-        // Generate initial food
+        //Genera el primer nodo de comida
         generarComida();
     }
 
@@ -62,17 +60,18 @@ public class Tablero extends JPanel {
         nodosComida.add(new NodoComida());
     }
 
+    //Método sobrescrito de JPanel que Swing llama automáticamente cada vez que el panel necesita actualizarse visualmente, aquí el JPanel se comporta como un lienzo que se actualiza constantemente de acuerdo a las diferentes ejecuciones 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // Draw margins
+        //Se dibuja los limites del área del juego
         g.setColor(Color.GREEN);
         g.drawRect(LIMITE_IZQUIERDA, LIMITE_ARRIBA, LIMITE_DERECHA - LIMITE_IZQUIERDA, LIMITE_ABAJO - LIMITE_ARRIBA);
 
         for (Vivora vivora : vivoras) {
             if (vivora.viva) {
-                vivora.draw(g);
+                vivora.dibujarVibora(g);
             }
         }
         for (NodoComida comida : nodosComida) {
@@ -80,7 +79,7 @@ public class Tablero extends JPanel {
         }
     }
 
-    // Method to update the game state
+    //Método para actualizar el juego constantemente
     public void actualizarJuego() {
         for (Vivora vivora : vivoras) {
             if (!vivora.viva) {
@@ -90,72 +89,46 @@ public class Tablero extends JPanel {
             synchronized (vivora) {
                 // Obtener la cabeza de manera segura
                 Nodo cabeza = vivora.getCabeza();
-                Nodo current = cabeza.siguienteNodo;
-                while (current != null) {
-                    if (cabeza.x == current.x && cabeza.y == current.y) {
+                Nodo actual = cabeza.siguienteNodo;
+                while (actual != null) {
+                    if (cabeza.x == actual.x && cabeza.y == actual.y) {
                         vivora.viva = false;
                         break;
                     }
-                    current = current.siguienteNodo;
+                    actual = actual.siguienteNodo;
                 }
 
-                // Comprobación de colisión con comida
                 for (NodoComida comida : nodosComida) {
-                    if (cabeza.x == comida.coordenadaX && cabeza.y == comida.coordenadaY) {
+                    // Ajusta el margen para verificar si la cabeza y la comida se alinean en el tablero
+                    if (Math.abs(cabeza.x - comida.coordenadaX) < Nodo.TAMANO
+                            && Math.abs(cabeza.y - comida.coordenadaY) < Nodo.TAMANO) {
+                        //Se aumenta el tamaño de la vibora
                         vivora.agregarNodo();
                         nodosComida.remove(comida);
                         generarComida();
                         break;
                     }
-                }
 
-                // Comprobación de colisiones con otras víboras
-                for (Vivora otherVivora : vivoras) {
-                    if (otherVivora != vivora && otherVivora.viva) {
-                        Nodo otherCurrent = otherVivora.getCabeza();
-                        synchronized (otherVivora) {
-                            while (otherCurrent != null) {
-                                if (cabeza.x == otherCurrent.x && cabeza.y == otherCurrent.y) {
-                                    vivora.viva = false;
-                                    JOptionPane.showMessageDialog(this, "¡Colisión detectada! La víbora ha muerto.", 
-                        "Colisión", JOptionPane.INFORMATION_MESSAGE);
-                                    break;
+                    // Comprobación de colisiones con otras víboras
+                    for (Vivora viboraSiguiente : vivoras) {
+                        if (viboraSiguiente != vivora && viboraSiguiente.viva) {
+                            Nodo actualSiguiente = viboraSiguiente.getCabeza();
+                            synchronized (viboraSiguiente) {
+                                while (actualSiguiente != null) {
+                                    if (cabeza.x == actualSiguiente.x && cabeza.y == actualSiguiente.y) {
+                                        vivora.viva = false;
+                                        JOptionPane.showMessageDialog(this, "¡Colisión detectada! La víbora ha muerto.",
+                                                "Colisión", JOptionPane.INFORMATION_MESSAGE);
+                                        break;
+                                    }
+                                    actualSiguiente = actualSiguiente.siguienteNodo;
                                 }
-                                otherCurrent = otherCurrent.siguienteNodo;
                             }
                         }
                     }
                 }
             }
-        }
-        repaint();
-    }
-    //Posibles mejoras
-    public void verificarFinDeJuego() {
-        boolean todasMuertas = vivoras.stream().allMatch(vivora -> !vivora.viva);
-        if (todasMuertas) {
-            JOptionPane.showMessageDialog(this, "Juego Terminado", "Fin", JOptionPane.INFORMATION_MESSAGE);
-            // Detener actualización del tablero
-            gameActive = false;
+            repaint();//Actualiza el lienzo 
         }
     }
-
-    public void reiniciarPartida() {
-        vivoras.clear();
-        nodosComida.clear();
-        generarComida(); // Agregar una comida inicial
-        // Añadir una víbora inicial o implementar lógica para múltiples
-        Vivora vivoraInicial = new Vivora(true, 200, 200, "Vívora 1");
-        vivoras.add(vivoraInicial);
-        vivoraInicial.start();
-        gameActive = true; // Permitir actualizaciones del juego
-        repaint();
-    }
-    
-    
 }
-
-
-
-
-
